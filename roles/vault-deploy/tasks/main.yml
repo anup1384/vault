@@ -1,0 +1,55 @@
+---
+  - name: Install unzip
+    package:
+      name: unzip
+      update_cache: yes
+    become: true
+
+  - name: Download and install vault binary
+    unarchive:
+      src: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip"
+      dest: /usr/bin/
+      remote_src: True
+    become: true
+
+  - name: Create vault config directory
+    file: state=directory path={{ vault_conf_dir }}
+    become: true
+
+  - name: Copy the vault config
+    template:
+      src: vault-server-config.hcl.j2
+      dest: {{ vault_conf_dir }}/vaultconfig.hcl
+    become: true
+
+
+  - name: Create Data Directory  for vault
+    file:
+      path: {{ vault_data_dir }}
+      state: directory
+      mode: 0755
+    become: true
+
+  - name: Copy the vault config
+    template:
+      src: vault.service.j2
+      dest: /etc/systemd/system/vault.service
+    become: true
+
+  - name: Start vault service
+    systemd:
+      state: started
+      name: vault
+      daemon_reload: yes
+    become: true
+
+  - pause:
+      seconds: 15
+
+  - name: Initialize the vault
+    command: vault operator init 
+    register: keys
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+
+  - debug: msg="{{ keys }}"

@@ -1,0 +1,3 @@
+vault_conf_dir: /etc/opt/vault
+vault_version: 0.10.3
+vault_data_dir: /vault-data
